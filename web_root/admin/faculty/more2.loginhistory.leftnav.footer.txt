@@ -1,0 +1,7 @@
+<script>
+    $j(function () {
+        var linkHtml = '<ul></ul><li><a href="loginhist.html?frn=~(frn)">Login History</a></li></ul>';
+        $j('#tchr_custom_pages').append(linkHtml);
+    });
+
+</script>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<!-- start right frame -->
+<head>
+    <title>Login History - ~(lastfirst) &nbsp; ~(teachernumber)</title>
+    ~[wc:commonscripts]
+    <link href="/images/css/screen.css" rel="stylesheet" media="screen">
+    <link href="/images/css/print.css" rel="stylesheet" media="print">
+</head>
+
+<body>
+
+~[wc:admin_header_frame_css]<!-- breadcrumb start --><a href="/admin/home.html" target="_top">~[text:psx.html.admin_faculty.edit.start_page]</a>
+&gt; <a href="/admin/faculty/search.html" target="_top">~[text:psx.html.admin_faculty.edit.staff]</a> &gt; <a
+        href="/admin/faculty/home.html?selectteacher=nosearch" target="_top">~[text:psx.html.admin_faculty.edit.select_a_staff_member]</a>
+&gt;Login History - ~(lastfirst) &nbsp; ~(teachernumber)<!-- breadcrumb end -->~[wc:admin_navigation_frame_css]
+
+<span class="account-photo">~[facultytitlephoto]</span>
+
+<!-- start of content and bounding box -->
+<h1>Login History - ~(lastfirst) &nbsp; ~(teachernumber)</h1>
+
+<div class="box-round">
+    <p>
+
+    <table class="sortable" border="" cellspacing="0" cellpadding="4" id="sorttedtable">
+        <tr>
+            <td align="center" class="bold">&nbsp;</td>
+            <td align="center" class="bold">Type</td>
+            <td align="center" class="bold">User</td>
+            <td align="center" class="bold">School</td>
+            <td align="center" class="bold">Login</td>
+            <td align="center" class="bold">Log out</td>
+            <td align="center" class="bold">Minutes Online</td>
+            <td align="center" class="bold">Page Views</td>
+            <td align="center" class="bold">Log out reason</td>
+            <td align="center" class="bold">IP Address</td>
+            <td align="center" class="bold">Platform</td>
+            <td align="center" class="bold">User Agent</td>
+        </tr>
+
+        ~[tlist_sql;
+        SELECT
+        CASE
+        WHEN UserType = 10 THEN 'Admin'
+        WHEN UserType = 400 THEN 'Teacher'
+        WHEN UserType = 450 THEN 'Sub'
+        ELSE to_char(UserType)
+        END AS UserType,
+        t.lastfirst AS UserName,
+        CASE
+        WHEN l.UserID > 0 THEN CASE WHEN t.SchoolID = 0 THEN 'DO' ELSE (SELECT Abbreviation FROM Schools WHERE
+        school_number = t.SchoolID) END
+        ELSE ''
+        END AS HomeSchool,
+        LoginDate,
+        substr('00' || to_char(FLOOR(((LoginTime-MOD(LoginTime, 60))/60)/60)),-2,2) LoginHours,
+        substr('00' || to_char(MOD(((LoginTime-(MOD(LoginTime, 60)))/60),60)),-2,2) LoginMinutes,
+        substr('00' || to_char(MOD(LoginTime, 60)),-2,2) LoginSeconds,
+        LogoutDate,
+        substr('00' || to_char(FLOOR(((LogoutTime-MOD(LogoutTime, 60))/60)/60)),-2,2) LogoutHours,
+        substr('00' || to_char(MOD(((LogoutTime-(MOD(LogoutTime, 60)))/60),60)),-2,2) LogoutMinutes,
+        substr('00' || to_char(MOD(LogoutTime, 60)),-2,2) LogoutSeconds,
+        MinutesOnline,
+        PageViews,
+        CASE
+        WHEN LogoutStatus IN (-10,-2,-30) THEN 'No log off reason known'
+        WHEN LogoutStatus IN (0) THEN 'Not logged off'
+        WHEN LogoutStatus IN (20) THEN 'Auto log off'
+        WHEN LogoutStatus IN (40,41) OR ((UserType IN (100,110)) AND LogoutStatus IN (61)) THEN 'User logged off'
+        WHEN LogoutStatus IN (60) THEN 'Logged off by PS procedures'
+        WHEN LogoutStatus IN (61) THEN 'Possible Hack'
+        WHEN LogoutStatus IN (100,110) OR ((UserType IN (100,110)) AND LogoutStatus IN (160)) THEN 'Forced Log Off
+        because another user logged in'
+        WHEN LogoutStatus IN (160) THEN 'Guardian Access'
+        WHEN LogoutStatus IN (210) THEN 'Forced Log Off because the system was shut down'
+        ELSE to_char(LogoutStatus)
+        END AS LogoutReason,
+        FLOOR(CASE WHEN IPAddr > 0 THEN IPAddr/16777216 ELSE IPAddr/16777216 + 256 END) IP1,
+        FLOOR(CASE WHEN IPAddr > 0 THEN MOD(IPAddr, 16777216)/65536 ELSE MOD(IPAddr, 16777216)/65536 + 256 END) IP2,
+        FLOOR(CASE WHEN IPAddr > 0 THEN MOD(MOD(IPAddr, 16777216),65536)/256 ELSE MOD(MOD(IPAddr, 16777216),65536)/256 +
+        256 END) IP3,
+        FLOOR(CASE WHEN IPAddr > 0 THEN MOD(MOD(MOD(IPAddr, 16777216),65536),256) ELSE MOD(MOD(MOD(IPAddr,
+        16777216),65536),256) + 256 END) IP4,
+        CASE
+        WHEN Platform = 1 THEN 'Macintosh'
+        WHEN Platform = 2 THEN 'Windows'
+        ELSE 'Other'
+        END AS Platform,
+        to_char(l.UserAgent) AS UA
+        FROM Logins l INNER JOIN Teachers t ON l.UserID = t.ID
+        WHERE l.UserID = ~([TEACHERS]ID)
+        ORDER BY LoginDate DESC,LoginTime DESC;alternatecolor]
+        <tr class="~[evenoddrow]">
+            <td>~(count;-)</td>
+            <td>~(UserType;t)</td>
+            <td>~(Teacher;t)</td>
+            <td>~(HomeSchool;t)</td>
+            <td>~(LoginDate;d) ~(LoginHours;t):~(LoginMinutes;t):~(LoginSeconds;t)</td>
+            <td>~(LogoutDate;d) ~(LogoutHours;t):~(LogoutMinutes;t):~(LogoutSeconds;t)</td>
+            <td>~(MinutesOnline)</td>
+            <td>~(PageViews)</td>
+            <td>~(LogoutReason;t)</td>
+            <td>~(IP1;l).~(IP2;l).~(IP3;l).~(IP4;l)</td>
+            <td>~(Platform;t)</td>
+            <td>~(UserAgent;t)</td>
+        </tr>
+        [/tlist_sql]
+        <!-- end online verification -->
+    </table>
+    <br>
+
+    </td>
+    <td width="25" background="/images/bond_box_right_edge.gif"><img src="/images/spacer.gif" width="25" height="1">
+    </td>
+    </tr>
+    </table>
+    <br>
+    <!-- end of content of bounding box -->
+
+    ~[wc:admin_footer_frame_css]
+</div>
+</body>
+</html><!-- end right frame -->
